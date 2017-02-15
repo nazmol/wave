@@ -6,7 +6,7 @@ const User = require('./model');
 const config = require('../../../config/').server;
 
 // middleware that is specific to this router
-router.use(function timeLog(req, res, next) {
+router.use(function timeLog(req, res, next) {/*
   const token = 
     req.body.token || req.query.token || req.headers['x-access-token'];
   
@@ -33,6 +33,8 @@ router.use(function timeLog(req, res, next) {
   } else {
     res.status(403).send({ success: false, message: 'No token provided.' });
   }
+  */
+  next()
 });
 
 router.get('/', (req, res) => {
@@ -43,6 +45,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
+  console.log(req.body)
   User.findOne({name: req.body.name})
     .exec()
     .then(user => {
@@ -54,25 +57,26 @@ router.post('/', (req, res) => {
 
         return;
       };
-      if (user.password !== req.body.password) {
-        res.json({ 
-          success: false, 
-          message: 'Authentication failed. Wrong password.' 
+      user.comparePassword(req.body.password)
+        .then(isMatch => {
+          if(!isMatch){
+            res.json({ 
+              success: false, 
+              message: 'Authentication failed. Wrong password.' 
+            });
+            return;
+          };
+
+          const token = jwt.sign(user, config.secret, {
+            expiresIn : 60*60*24
+          });
+      
+          res.json({
+            success: true,
+            message: 'Enjoy your token!',
+            token: token
+          });
         });
-
-        return;
-      };
-
-      const token = jwt.sign(user, config.secret, {
-        expiresIn : 60*60*24
-      });
-      
-      res.json({
-        success: true,
-        message: 'Enjoy your token!',
-        token: token
-      });
-      
     })
     .catch(err => {
       console.log('Something has been catched', err);
@@ -82,11 +86,10 @@ router.post('/', (req, res) => {
 
 router.put('/', (req, res) => {
   const user = new User({ 
-    name: 'Alex Povinny', 
+    name: 'Gregor Vashich', 
     password: 'password',
     admin: true 
   });
-
   user
     .save()
     .then(response => res.json({ success: true }));
