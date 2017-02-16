@@ -10,7 +10,7 @@ const userShema = new Schema({
 });
 
 userShema.methods.comparePassword = function(password){
-  return Promise.resolve(this.password === password);
+  return this.password === password;
 };
 
 module.exports = mongoose.model('User', userShema);
